@@ -15,13 +15,19 @@ MonoBehaviour:
   levelDatas:
   - levelNumber: 1
     rows: 2
-    columns: 2
+    columns: 3
+    matchScore: 10
+    streakScoreMultiplier: 10
+    cardCountToMatch: 2
   - levelNumber: 2
     rows: 4
     columns: 3
-  - levelNumber: 2
-    rows: 6
-    columns: 8
-  - levelNumber: 2
-    rows: 3
-    columns: 5
+    matchScore: 20
+    streakScoreMultiplier: 10
+    cardCountToMatch: 3
+  - levelNumber: 3
+    rows: 4
+    columns: 3
+    matchScore: 20
+    streakScoreMultiplier: 10
+    cardCountToMatch: 2
