@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -142,13 +143,31 @@ public class GameManager : MonoBehaviour
             return;
         }
         DontDestroyOnLoad(gameObject);
+        
+        SaveLoadManager.LoadGame();
+        if(SaveLoadManager.playerLevelArray == null){
+            currentLevelIndex = 0;
+        } else {
+            currentLevelIndex = SaveLoadManager.playerLevelArray.playerLevelDataArray.Count();
+        }
 
-        cellsUsed = new();
+        if(currentLevelIndex >= levelDataArray.levelDatas.Count())
+            currentLevelIndex = 0;
     }
 
     private void Start()
     {
-        SetCurrentLevelIndex();
+        cellsUsed = new();
+        UIManager.Instance.UpdateLevelText(currentLevelIndex + 1);
+
+        if(currentLevelIndex == 0) {
+            UIManager.Instance.LeftButtonState(false);
+            UIManager.Instance.RightButtonState(false);
+        } else {
+            UIManager.Instance.LeftButtonState(true);
+            UIManager.Instance.RightButtonState(false);
+        }
+        UpdateMenuUI();
     }
 
     public void InitializeGame()
@@ -217,20 +236,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void SetCurrentLevelIndex()
-    {
-        //Read from playerprefs
-        if (PlayerPrefs.HasKey("currentLevelIndex"))
-        {
-            currentLevelIndex = PlayerPrefs.GetInt("currentLevelIndex", 0);
-        }
-        else
-        {
-            currentLevelIndex = 0;
-        }
-        UIManager.Instance.UpdateLevelText(currentLevelIndex + 1);
-    }
-
     public void RemoveCompletedCell(Cell cellToRemove)
     {
         cellsUsed.Remove(cellToRemove);
@@ -271,6 +276,7 @@ public class GameManager : MonoBehaviour
             DisableCards();
             Score += currentLevel.matchScore;
             StreakCount++;
+            MatchCount++;
         } else {
             AudioManager.Instance.PlayAudio(misMatchAudioClip);
             StreakCount = -1;
@@ -278,6 +284,8 @@ public class GameManager : MonoBehaviour
             FlipSelectedCards();
         }
         selectedCells.Clear();
+        TurnCount++;
+
     }
 
     private void DisableCards(){
@@ -296,10 +304,60 @@ public class GameManager : MonoBehaviour
     private IEnumerator ShowWinPanel(){
         GiveStreakScoreIfAny();
         yield return new WaitForSeconds(1f);
+        PlayerLevelData playerLevelData = new()
+        {
+            levelNumber = currentLevel.levelNumber,
+            matchScore = Score,
+            turnCount = TurnCount
+        };
+
+        if(SaveLoadManager.playerLevelArray == null || currentLevelIndex >= SaveLoadManager.playerLevelArray.playerLevelDataArray.Count()){
+            SaveLoadManager.playerLevelArray ??= new PlayerLevelArray();
+            SaveLoadManager.playerLevelArray.playerLevelDataArray.Add(playerLevelData);
+        } else {
+            SaveLoadManager.playerLevelArray.playerLevelDataArray[currentLevelIndex] = playerLevelData;
+        }
+        SaveLoadManager.SaveGame();
         UIManager.Instance.ShowWinPanel();
         //Update Level Index
+        if(currentLevelIndex < levelDataArray.levelDatas.Count() - 1)
+            currentLevelIndex++;
+        else
+            currentLevelIndex = 0;
+        
+        UpdateMenuUI();        
+    }
+
+    public void ReduceCurrentLevelIndex(){
+        if(currentLevelIndex <= 0)
+            return;
+        currentLevelIndex--;        
+        UpdateMenuUI();
+    }
+
+    public void IncreaseCurrentLevelIndex(){
+        if(currentLevelIndex >= SaveLoadManager.playerLevelArray.playerLevelDataArray.Count())
+            return;
         currentLevelIndex++;
-        PlayerPrefs.SetInt("currentLevelIndex", currentLevelIndex);
+        UpdateMenuUI();
+    }
+
+    private void UpdateMenuUI(){
+        int playerLevelCount = SaveLoadManager.playerLevelArray == null ? 0 : SaveLoadManager.playerLevelArray.playerLevelDataArray.Count();
+        if(currentLevelIndex >= playerLevelCount) {
+            UIManager.Instance.UpdateMenuLevelUIStat(new PlayerLevelData {matchScore = 0, turnCount = 0});
+        } else {
+            UIManager.Instance.UpdateMenuLevelUIStat(SaveLoadManager.playerLevelArray.playerLevelDataArray[currentLevelIndex]);
+        }
         UIManager.Instance.UpdateLevelText(currentLevelIndex + 1);
+        UIManager.Instance.LeftButtonState(true);
+        UIManager.Instance.RightButtonState(true);
+        if(currentLevelIndex <= 0){
+            UIManager.Instance.LeftButtonState(false);
+        }
+        if(currentLevelIndex >= playerLevelCount){
+            UIManager.Instance.RightButtonState(false);
+        }
+        UIManager.Instance.UpdateLevelNote(levelDataArray.levelDatas[currentLevelIndex].cardCountToMatch);
     }
 }

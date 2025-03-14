@@ -1,5 +1,7 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -20,6 +22,22 @@ public class UIManager : MonoBehaviour
 
     [SerializeField]
     private GameObject mainMenuPanel;
+
+    [SerializeField]
+    private Button leftButton;
+    [SerializeField]
+    private Button rightButton;
+
+    [SerializeField]
+    private TextMeshProUGUI menuScoreText;
+
+    [SerializeField]
+    private TextMeshProUGUI menuTurnText;
+
+    [SerializeField]
+    private TextMeshProUGUI noteText;
+
+    private float fadeDuration = 1f;
     
     private static UIManager instance;
 
@@ -51,17 +69,6 @@ public class UIManager : MonoBehaviour
         }
         DontDestroyOnLoad(gameObject);
     }
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void UpdateLevelText(int levelNumber){
         levelText.text = $"Level - {levelNumber}";
@@ -81,6 +88,34 @@ public class UIManager : MonoBehaviour
 
     public void ShowWinPanel(){
         mainMenuPanel.SetActive(true);
+        StartCoroutine(FadeOutCongratulationsText());
+    }
+
+    public void RightButtonState(bool isInteractable){
+        rightButton.interactable = isInteractable;
+    }
+
+    public void LeftButtonState(bool isInteractable){
+        leftButton.interactable = isInteractable;
+    }
+
+    public void UpdateMenuLevelUIStat(PlayerLevelData playerLevelData){
+        menuScoreText.text = $"Score: {playerLevelData.matchScore}";
+        menuTurnText.text = $"Turns: {playerLevelData.turnCount}";
+    }
+
+    public void UpdateLevelNote(int matchCardCount){
+        noteText.text = $"Match {matchCardCount} images to score";
+    }
+
+    IEnumerator FadeOutCongratulationsText(){
         congratsText.gameObject.SetActive(true);
+        congratsText.color = new Color(congratsText.color.r, congratsText.color.g, congratsText.color.b, 1);
+        while (congratsText.color.a > 0.0f)
+        {
+            congratsText.color = new Color(congratsText.color.r, congratsText.color.g, congratsText.color.b, congratsText.color.a - (Time.deltaTime / fadeDuration));
+            yield return null;
+        }
+        congratsText.gameObject.SetActive(false);
     }
 }
