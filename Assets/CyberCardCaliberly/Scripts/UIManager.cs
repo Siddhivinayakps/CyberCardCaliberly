@@ -41,8 +41,6 @@ public class UIManager : MonoBehaviour
 
     [SerializeField]
     private TextMeshProUGUI longestStreakText;
-
-    private float fadeDuration = 1f;
     
     private static UIManager instance;
 
