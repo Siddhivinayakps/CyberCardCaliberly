@@ -7,17 +7,17 @@ public class Cell : MonoBehaviour, IPointerDownHandler
 {
     public GameObject imageHolder;
 
-    public GameObject CardImageBg;
+    public GameObject cardImageBg;
     
-    public Image CardImage;
-
-    public int spriteId;
-
-    public bool isClickable;
+    public Image cardImage;
 
     public float flipDuration = 1f; // Time it takes to complete the flip
 
-    public bool horizontalFlip = false;
+    [HideInInspector]
+    public int spriteId;
+
+    [HideInInspector]
+    public bool isClickable;
 
     // Start is called before the first frame update
     void Start()
@@ -69,7 +69,7 @@ public class Cell : MonoBehaviour, IPointerDownHandler
     }
 
     void ShowCardBack(bool toShow){
-        CardImageBg.SetActive(!toShow);
+        cardImageBg.SetActive(!toShow);
     }
 
     public void OnPointerDown(PointerEventData eventData)

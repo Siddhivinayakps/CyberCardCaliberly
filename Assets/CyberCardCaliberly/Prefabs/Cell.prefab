@@ -245,9 +245,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   imageHolder: {fileID: 658743694258756291}
-  CardImageBg: {fileID: 1972413151333237181}
-  CardImage: {fileID: 6912832772655032917}
+  cardImageBg: {fileID: 1972413151333237181}
+  cardImage: {fileID: 6912832772655032917}
   spriteId: 0
+  isClickable: 0
+  flipDuration: 1
 --- !u!1 &8156893098042212378
 GameObject:
   m_ObjectHideFlags: 0
