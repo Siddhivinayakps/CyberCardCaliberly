@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -36,6 +38,9 @@ public class UIManager : MonoBehaviour
 
     [SerializeField]
     private TextMeshProUGUI noteText;
+
+    [SerializeField]
+    private TextMeshProUGUI longestStreakText;
 
     private float fadeDuration = 1f;
     
@@ -86,9 +91,12 @@ public class UIManager : MonoBehaviour
         turnText.text = $"{turnCount}";
     }
 
+    public void UpdateLongestStreakText(int longetsStreak){
+        longestStreakText.text = $"{longetsStreak}";
+    }
+
     public void ShowWinPanel(){
         mainMenuPanel.SetActive(true);
-        StartCoroutine(FadeOutCongratulationsText());
     }
 
     public void RightButtonState(bool isInteractable){
@@ -110,12 +118,18 @@ public class UIManager : MonoBehaviour
 
     IEnumerator FadeOutCongratulationsText(){
         congratsText.gameObject.SetActive(true);
-        congratsText.color = new Color(congratsText.color.r, congratsText.color.g, congratsText.color.b, 1);
-        while (congratsText.color.a > 0.0f)
+        float progress = 0;
+        congratsText.transform.localScale = Vector2.zero;
+        while (progress <= 2f)
         {
-            congratsText.color = new Color(congratsText.color.r, congratsText.color.g, congratsText.color.b, congratsText.color.a - (Time.deltaTime / fadeDuration));
+            congratsText.transform.localScale = Vector3.Lerp(Vector2.zero, Vector2.one, progress);
+            progress += Time.deltaTime;
             yield return null;
         }
         congratsText.gameObject.SetActive(false);
+    }
+
+    public void ShowCongatsText(){
+        StartCoroutine(FadeOutCongratulationsText());
     }
 }

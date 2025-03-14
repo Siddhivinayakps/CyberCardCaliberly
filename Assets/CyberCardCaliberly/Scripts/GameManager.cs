@@ -109,6 +109,9 @@ public class GameManager : MonoBehaviour
             streakCount = value;
         }
     }
+
+    private int highestStreak = -1;
+
     #endregion
 
     #region SingleTon Setup
@@ -250,8 +253,8 @@ public class GameManager : MonoBehaviour
 
     public void GiveStreakScoreIfAny()
     {
-        if(StreakCount > 0){
-            Score += currentLevel.streakScoreMultiplier * StreakCount;
+        if(highestStreak > 0){
+            Score += currentLevel.streakScoreMultiplier * highestStreak;
         }
     }
 
@@ -282,8 +285,11 @@ public class GameManager : MonoBehaviour
             MatchCount++;
         } else {
             AudioManager.Instance.PlayAudio(misMatchAudioClip);
+            if(StreakCount > highestStreak && StreakCount > 0) {
+                highestStreak = StreakCount;
+                UIManager.Instance.UpdateLongestStreakText(highestStreak);
+            }
             StreakCount = -1;
-            GiveStreakScoreIfAny();
             FlipSelectedCards();
         }
         selectedCells.Clear();
@@ -305,8 +311,11 @@ public class GameManager : MonoBehaviour
     }
 
     private IEnumerator ShowWinPanel(){
+        if(highestStreak > 0)
+            UIManager.Instance.UpdateLongestStreakText(highestStreak);
+        UIManager.Instance.ShowCongatsText();
         GiveStreakScoreIfAny();
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(1.5f);
         PlayerLevelData playerLevelData = new()
         {
             levelNumber = currentLevel.levelNumber,
@@ -339,7 +348,7 @@ public class GameManager : MonoBehaviour
     }
 
     public void IncreaseCurrentLevelIndex(){
-        if(currentLevelIndex >= SaveLoadManager.playerLevelArray.playerLevelDataArray.Count() - 1)
+        if(currentLevelIndex >= levelDataArray.levelDatas.Count() - 1)
             return;
         currentLevelIndex++;
         UpdateMenuUI();
@@ -347,6 +356,11 @@ public class GameManager : MonoBehaviour
 
     private void UpdateMenuUI(){
         int playerLevelCount = SaveLoadManager.playerLevelArray == null ? 0 : SaveLoadManager.playerLevelArray.playerLevelDataArray.Count();
+        int totalLevelCont = levelDataArray.levelDatas.Count();
+        int levelCountCondition = playerLevelCount < totalLevelCont ? playerLevelCount : totalLevelCont - 1;
+        
+        
+        
         if(currentLevelIndex >= playerLevelCount) {
             UIManager.Instance.UpdateMenuLevelUIStat(new PlayerLevelData {matchScore = 0, turnCount = 0});
         } else {
@@ -358,9 +372,12 @@ public class GameManager : MonoBehaviour
         if(currentLevelIndex <= 0){
             UIManager.Instance.LeftButtonState(false);
         }
-        if(currentLevelIndex >= playerLevelCount - 1){
+
+        if(currentLevelIndex >= levelCountCondition){
             UIManager.Instance.RightButtonState(false);
         }
+
+
         UIManager.Instance.UpdateLevelNote(levelDataArray.levelDatas[currentLevelIndex].cardCountToMatch);
     }
 
