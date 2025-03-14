@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
 
     private List<Cell> cellsUsed;
 
+    private List<int> generatedRandomIndexes = new List<int>();
+
     #endregion
 
     #region Public Fields
@@ -202,6 +204,7 @@ public class GameManager : MonoBehaviour
         int totalCellsToPopulate = currentLevel.rows * currentLevel.columns;
         int indexOfImage = 0;
         cellsUsed.Clear();
+        generatedRandomIndexes.Clear();
         // Populate Grid with Items
         for (int i = 0; i < totalCellsToPopulate; i++)
         {
@@ -209,7 +212,7 @@ public class GameManager : MonoBehaviour
             newCell.name = "Cell_" + i;
             if (i % cardCountToMatch == 0)
             {
-                indexOfImage = Random.Range(0, spriteList.sprites.Length);
+                indexOfImage = GetNonRepeatingRandomIndex(0, spriteList.sprites.Length);
             }
             newCell.cardImage.sprite = spriteList.sprites[indexOfImage];
             newCell.spriteId = indexOfImage;
@@ -336,7 +339,7 @@ public class GameManager : MonoBehaviour
     }
 
     public void IncreaseCurrentLevelIndex(){
-        if(currentLevelIndex >= SaveLoadManager.playerLevelArray.playerLevelDataArray.Count())
+        if(currentLevelIndex >= SaveLoadManager.playerLevelArray.playerLevelDataArray.Count() - 1)
             return;
         currentLevelIndex++;
         UpdateMenuUI();
@@ -355,9 +358,21 @@ public class GameManager : MonoBehaviour
         if(currentLevelIndex <= 0){
             UIManager.Instance.LeftButtonState(false);
         }
-        if(currentLevelIndex >= playerLevelCount){
+        if(currentLevelIndex >= playerLevelCount - 1){
             UIManager.Instance.RightButtonState(false);
         }
         UIManager.Instance.UpdateLevelNote(levelDataArray.levelDatas[currentLevelIndex].cardCountToMatch);
+    }
+
+    private int GetNonRepeatingRandomIndex(int firstInclusive, int lastExclusive){
+
+        int rand = Random.Range(firstInclusive,lastExclusive);
+        while(generatedRandomIndexes.Contains(rand))
+        {
+            rand = Random.Range(firstInclusive,lastExclusive);
+        }
+        generatedRandomIndexes.Add(rand);
+        if(generatedRandomIndexes.Count == lastExclusive) generatedRandomIndexes.Clear();
+        return rand;
     }
 }
