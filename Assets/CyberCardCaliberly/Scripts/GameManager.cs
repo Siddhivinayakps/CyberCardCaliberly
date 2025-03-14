@@ -1,12 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public enum GameState {
-    // MainMenu,
-    Idle,
-    Selected,
-}
-
 
 public class GameManager : MonoBehaviour
 {
@@ -56,7 +50,6 @@ public class GameManager : MonoBehaviour
     public Cell cellPrefab;
 
     //Tapped Cell
-    public Cell selectedCell;
     [HideInInspector]
     public List<Cell> selectedCells;
 
@@ -74,8 +67,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //To Keep Track of game state
-    public GameState gameState;
     private int turnCount = 0;
     public int TurnCount
     {
@@ -145,7 +136,6 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        gameState = GameState.Idle;
         if (instance != null && instance != this)
         {
             Destroy(gameObject);
@@ -158,26 +148,29 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        InitializeGame();
+        SetCurrentLevelIndex();
     }
 
-    void InitializeGame(){
-        //Read from playerprefs
-        
-        // if(PlayerPrefs.HasKey("currentLevelIndex")){
-        //     currentLevelIndex = PlayerPrefs.GetInt("currentLevelIndex",0); 
-        // } else {
-        //     currentLevelIndex = 0;
-        // }
-
-        //Set current Level
-        if(currentLevelIndex < levelDataArray.levelDatas.Length) {
+    public void InitializeGame()
+    {
+        if (currentLevelIndex < levelDataArray.levelDatas.Length)
+        {
             currentLevel = levelDataArray.levelDatas[currentLevelIndex];
-        } else {
+        }
+        else
+        {
             Debug.Log("Levels finished, Add more levels to continue");
             return;
         }
-        
+
+        //Reset Score Value
+        Score = 0;
+        TurnCount = 0;
+        MatchCount = 0;
+        StreakCount = -1;
+
+        cardCountToMatch = currentLevel.cardCountToMatch;
+
         //Set Up Ui for the level
         customGridLayout.SetUpUIForLevel(currentLevel);
 
@@ -185,33 +178,29 @@ public class GameManager : MonoBehaviour
         AddImageToTheCells();
     }
 
-    public void LoadNextLevel(){
-        //Update Level Index
-        currentLevelIndex++;
-        // PlayerPrefs.SetInt("currentLevelIndex",currentLevelIndex); 
-
-        InitializeGame();
-    }
-
-
-    private void AddImageToTheCells(){
+    private void AddImageToTheCells()
+    {
         int totalCellsToPopulate = currentLevel.rows * currentLevel.columns;
         int indexOfImage = 0;
+        cellsUsed.Clear();
         // Populate Grid with Items
         for (int i = 0; i < totalCellsToPopulate; i++)
         {
             Cell newCell = Instantiate(cellPrefab, customGridLayout.transform);
             newCell.name = "Cell_" + i;
-            if(i % 2 == 0){
-                indexOfImage = Random.Range(0,spriteList.sprites.Length);
+            if (i % cardCountToMatch == 0)
+            {
+                indexOfImage = Random.Range(0, spriteList.sprites.Length);
             }
-            newCell.CardImage.sprite = spriteList.sprites[indexOfImage];
+            newCell.cardImage.sprite = spriteList.sprites[indexOfImage];
             newCell.spriteId = indexOfImage;
+            cellsUsed.Add(newCell);
         }
         RandomizeCellAndParent();
     }
 
-    public void RandomizeCellAndParent(){
+    public void RandomizeCellAndParent()
+    {
         List<Transform> children = new();
         for (int i = 0; i < customGridLayout.transform.childCount; i++)
         {
@@ -226,5 +215,91 @@ public class GameManager : MonoBehaviour
         {
             children[i].SetSiblingIndex(i);
         }
+    }
+
+    public void SetCurrentLevelIndex()
+    {
+        //Read from playerprefs
+        if (PlayerPrefs.HasKey("currentLevelIndex"))
+        {
+            currentLevelIndex = PlayerPrefs.GetInt("currentLevelIndex", 0);
+        }
+        else
+        {
+            currentLevelIndex = 0;
+        }
+        UIManager.Instance.UpdateLevelText(currentLevelIndex + 1);
+    }
+
+    public void RemoveCompletedCell(Cell cellToRemove)
+    {
+        cellsUsed.Remove(cellToRemove);
+        if (cellsUsed.Count == 0)
+        {
+            StartCoroutine(ShowWinPanel());
+        }
+    }
+
+    public void GiveStreakScoreIfAny()
+    {
+        if(StreakCount > 0){
+            Score += currentLevel.streakScoreMultiplier * StreakCount;
+        }
+    }
+
+    public void CheckMatch(){
+        if(selectedCells.Count != cardCountToMatch) {
+            return;
+        }
+
+        int spriteId = -1;
+        bool isMatched = false;
+        for(int i = 0; i < cardCountToMatch; i++){
+            if(spriteId == -1){
+                spriteId = selectedCells[i].spriteId;
+                isMatched = false;
+            } else if(spriteId == selectedCells[i].spriteId) {
+                isMatched = true;
+            } else {
+                isMatched = false;
+                break;
+            }
+        }
+        
+        if(isMatched){
+            AudioManager.Instance.PlayAudio(matchAudioClip);
+            DisableCards();
+            Score += currentLevel.matchScore;
+            StreakCount++;
+        } else {
+            AudioManager.Instance.PlayAudio(misMatchAudioClip);
+            StreakCount = -1;
+            GiveStreakScoreIfAny();
+            FlipSelectedCards();
+        }
+        selectedCells.Clear();
+    }
+
+    private void DisableCards(){
+        foreach(Cell cell in selectedCells){
+            StartCoroutine(cell.RemoveCard());
+            RemoveCompletedCell(cell);
+        }
+    }
+
+    private void FlipSelectedCards(){
+        foreach(Cell cell in selectedCells){
+            StartCoroutine(cell.FlipCard());
+        }
+    }
+
+    private IEnumerator ShowWinPanel(){
+        GiveStreakScoreIfAny();
+        yield return new WaitForSeconds(1f);
+        UIManager.Instance.ShowWinPanel();
+        //Update Level Index
+        currentLevelIndex++;
+        PlayerPrefs.SetInt("currentLevelIndex", currentLevelIndex);
+        UIManager.Instance.UpdateLevelText(currentLevelIndex + 1);
     }
 }

@@ -76,47 +76,14 @@ public class Cell : MonoBehaviour, IPointerDownHandler
     {
         if(!isClickable) 
             return;
-
-        if(GameManager.Instance.selectedCell == this)
-            return;
-
-        Debug.Log("[Sid] Not Working");
-        
+        GameManager.Instance.selectedCells.Add(this);
+        GameManager.Instance.CheckMatch();
         ShowCardBack(false);
-        
-        if(GameManager.Instance.gameState == GameState.Idle) {
-            GameManager.Instance.selectedCell = this;
-            GameManager.Instance.gameState = GameState.Selected;
-        } else {
-            CheckMatch();
-        }
         isClickable = false;
     }
 
-    private void CheckMatch(){
-        if(GameManager.Instance.selectedCell.spriteId == this.spriteId){
-            StartCoroutine(DisableImages());
-            Debug.Log("Matched");
-        } else {
-            FlipSelectedCards();
-            Debug.Log("Not Matched");
-        }
-        GameManager.Instance.gameState = GameState.Idle;
-    }
-
-    private IEnumerator DisableImages(){
-        GameObject selectedImgHolder = GameManager.Instance.selectedCell.imageHolder;
-        GameManager.Instance.selectedCell = null;
+    public IEnumerator RemoveCard(){
         yield return new WaitForSeconds(1f);
-        selectedImgHolder.SetActive(false);
         imageHolder.SetActive(false);
     }
-
-    private void FlipSelectedCards(){
-        StartCoroutine(GameManager.Instance.selectedCell.FlipCard());
-        StartCoroutine(FlipCard());
-    }
-
-
-
 }
