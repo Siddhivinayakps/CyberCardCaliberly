@@ -10,64 +10,150 @@ public enum GameState {
 
 public class GameManager : MonoBehaviour
 {
-    //Current Level Index
-    int currentLevelIndex;
+    #region Serializeable Fileds
 
     //Scriptable object reference for level array
     [SerializeField]
-    LevelDataArray levelDataArray;
+    private LevelDataArray levelDataArray;
 
     //Scriptable object reference for sprite list 
     [SerializeField]
-    SpriteList spriteList;
-
-    //Current Level Data
-    LevelData currentLevel;
+    private SpriteList spriteList;
 
     //Refer custom grid, To Do: Refactor if possible
     [SerializeField]
-    CustomGridLayout customGridLayout;
+    private CustomGridLayout customGridLayout;
+
+    [SerializeField]
+    AudioClip matchAudioClip;
+
+    [SerializeField]
+    AudioClip misMatchAudioClip;
+
+    [SerializeField]
+    AudioClip winAudioClip;
+
+    #endregion
+
+    #region Private Fields
+
+    //Current Level Index
+    private int currentLevelIndex;
+
+    //Current Level Data
+    private LevelData currentLevel;
+
+    private int cardCountToMatch;
+
+    private List<Cell> cellsUsed;
+
+    #endregion
+
+    #region Public Fields
 
     //Cell prefab
+    [HideInInspector]
     public Cell cellPrefab;
 
     //Tapped Cell
     public Cell selectedCell;
+    [HideInInspector]
+    public List<Cell> selectedCells;
+
+    private int score = 0;
+    public int Score
+    {
+        get
+        {
+            return score;
+        }
+        set
+        {
+            score = value;
+            UIManager.Instance.UpdateScoreText(score);
+        }
+    }
 
     //To Keep Track of game state
     public GameState gameState;
+    private int turnCount = 0;
+    public int TurnCount
+    {
+        get
+        {
+            return turnCount;
+        }
+        set
+        {
+            turnCount = value;
+            UIManager.Instance.UpdateTurnText(turnCount);
+        }
+    }
+
+    private int matchCount = 0;
+    public int MatchCount
+    {
+        get
+        {
+            return matchCount;
+        }
+        set
+        {
+            matchCount = value;
+            UIManager.Instance.UpdateMatchText(matchCount);
+        }
+    }
+    private int streakCount = 0;
+    public int StreakCount
+    {
+        get
+        {
+            return streakCount;
+        }
+        set
+        {
+            streakCount = value;
+        }
+    }
+    #endregion
+
+    #region SingleTon Setup
 
     // Setting Singleton
-    private static GameManager _instance;
+    private static GameManager instance;
 
     public static GameManager Instance
     {
         get
         {
-            if (_instance == null)
+            if (instance == null)
             {
-                _instance = FindObjectOfType<GameManager>();
+                instance = FindObjectOfType<GameManager>();
 
-                if (_instance == null)
+                if (instance == null)
                 {
                     GameObject go = new GameObject("Game Manager");
-                    _instance = go.AddComponent<GameManager>();
+                    instance = go.AddComponent<GameManager>();
                 }
             }
 
-            return _instance;
+            return instance;
         }
     }
+
+    #endregion
 
     private void Awake()
     {
         gameState = GameState.Idle;
-        if (_instance != null && _instance != this)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
         }
         DontDestroyOnLoad(gameObject);
+
+        cellsUsed = new();
     }
 
     private void Start()
